@@ -2,14 +2,9 @@
 A Native JavaScript implementation of the Lightspark SWF Player
 
 Note: This is a new project, you will slowly see parts added in.
-<details>
-<summary>My checklist</summary>
-    - <details>
-            [ ] Src
-      </details>
-
+My checklist:
+- [ ] Src
     - [ ] 3rd Party
-    - [ ] avmplus
-        - [ ] 
-    - [ ] 
-</details>
+        - [ ] avmplus
+            - [ ] BigInteger.js
+            - [ ] d2a.js
