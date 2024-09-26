@@ -5,7 +5,10 @@ Note: This is a new project, you will slowly see parts added in.
 <details>
 <summary>My checklist</summary>
     <details>
-        <summary>- [ ] Src</summary>
+        <summary>
+            
+            - [ ] Src
+        </summary>
     </details>
 
     - [ ] 3rd Party
