@@ -150,7 +150,7 @@ class BigInteger {
             result.wordBuffer[x] = 0;
         }
 
-        for (let x = 0; x < other.numWords; {
+        for (let x = 0; x < other.numWords; x++) {
             let factor = other.wordBuffer[x];
             if (factor) {
                 let pResult = result.wordBuffer.slice(x);
