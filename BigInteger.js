@@ -12,10 +12,10 @@ class BigInteger {
     setFromDouble(value) {
         let e;
         let fracMantissa = this.frexp(value, (exp) => e = exp);
-        e -= 53; // 52 mantissa bits + the hidden bit
-        let mantissa = Math.floor(fracMantissa * Math.pow(2, 53));
+        e -= 52; // 52 mantissa bits + the hidden bit
+        let mantissa = Math.floor(fracMantissa * Math.pow(2, 52));
 
-        this.numWords = Math.ceil((53 + Math.abs(e)) / 32);
+        this.numWords = Math.ceil((52 + Math.abs(e)) / 32);
 
         this.assert(this.numWords <= 128);
 
@@ -48,7 +48,7 @@ class BigInteger {
 
         let resultMantissa = 0;
         let w = 0;
-        let pos = 53;
+        let pos = 52;
         let bits = bitsInTopWord;
         let wshift = 0;
         let nextWord = this.numWords - 1;
@@ -63,7 +63,7 @@ class BigInteger {
                     wshift = pos > 31 ? 0 : 32 - bits;
                     resultMantissa <<= bits;
                 } else {
-                    break; // not enough data for full 53 bits
+                    break; // not enough data for full 52 bits
                 }
             }
         }
@@ -98,7 +98,7 @@ class BigInteger {
         }
 
         let result = resultMantissa * Math.pow(2, -52);
-        let expBase2 = this.lg2() + 1 - 53;
+        let expBase2 = this.lg2() + 1 - 52;
         if (expBase2 > 0) {
             result *= Math.pow(2, expBase2);
         }
