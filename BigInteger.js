@@ -10,17 +10,18 @@ class BigInteger {
     }
 
     setFromDouble(value) {
+        if (value === 0) {
+            this.setFromInteger(0);
+            return;
+        }
+
         let e;
         let fracMantissa = this.frexp(value, (exp) => e = exp);
         e -= 52; // 52 mantissa bits + the hidden bit
         let mantissa = Math.floor(fracMantissa * Math.pow(2, 52));
 
-        this.numWords = Math.ceil((52 + Math.abs(e)) / 32);
-
-        this.assert(this.numWords <= 128);
-
-        this.wordBuffer[1] = Math.floor(mantissa / Math.pow(2, 32));
         this.wordBuffer[0] = mantissa & 0xffffffff;
+        this.wordBuffer[1] = Math.floor(mantissa / Math.pow(2, 32));
         this.numWords = this.wordBuffer[1] === 0 ? 1 : 2;
 
         if (e < 0) {
@@ -37,73 +38,13 @@ class BigInteger {
     }
 
     doubleValueOf() {
-        if (this.numWords === 1) {
-            return this.wordBuffer[0];
-        }
+        if (this.numWords === 0) return 0;
+        if (this.numWords === 1) return this.wordBuffer[0];
 
-        let bitsInTopWord = 1;
-        for (let topWord = this.wordBuffer[this.numWords - 1]; topWord > 1; topWord >>= 1) {
-            bitsInTopWord++;
-        }
+        let mantissa = this.wordBuffer[0] + this.wordBuffer[1] * Math.pow(2, 32);
+        let expBase2 = this.lg2() - 52;
 
-        let resultMantissa = 0;
-        let w = 0;
-        let pos = 52;
-        let bits = bitsInTopWord;
-        let wshift = 0;
-        let nextWord = this.numWords - 1;
-        while (pos > 0) {
-            w = this.wordBuffer[nextWord--];
-            resultMantissa |= (w >> wshift);
-            pos -= bits;
-
-            if (pos > 0) {
-                if (nextWord > -1) {
-                    bits = pos > 31 ? 32 : pos;
-                    wshift = pos > 31 ? 0 : 32 - bits;
-                    resultMantissa <<= bits;
-                } else {
-                    break; // not enough data for full 52 bits
-                }
-            }
-        }
-
-        let bit53 = false;
-        let bit54 = false;
-        let rest = false;
-
-        if (pos <= 0) {
-            bit53 = (resultMantissa & 0x1) !== 0;
-            if (bits === 32) {
-                if (nextWord > -1) {
-                    w = this.wordBuffer[nextWord--];
-                    bit54 = (w & (1 << 31)) !== 0;
-                    rest = (w & ((1 << 31) - 1)) !== 0;
-                }
-            } else {
-                bit54 = (w & (1 << (wshift - 1))) !== 0;
-
-                if (wshift > 1) {
-                    rest = (w & ((1 << (wshift - 1)) - 1)) !== 0;
-                }
-
-                if (wshift > 1) {
-                    rest = rest || (this.wordBuffer[nextWord--] !== 0);
-                }
-            }
-        }
-
-        if (bit54 && (bit53 || rest)) {
-            resultMantissa += 1;
-        }
-
-        let result = resultMantissa * Math.pow(2, -52);
-        let expBase2 = this.lg2() + 1 - 52;
-        if (expBase2 > 0) {
-            result *= Math.pow(2, expBase2);
-        }
-
-        return result;
+        return mantissa * Math.pow(2, expBase2);
     }
 
     compare(other) {
