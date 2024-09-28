@@ -15,10 +15,10 @@ class BigInteger {
         e -= 53; // 52 mantissa bits + the hidden bit
         let mantissa = Math.floor(fracMantissa * (1 << 53));
 
-        this.numWords = Math.floor((2 + (e > 0 ? e : -e) / 32));
+        this.numWords = Math.floor(2 + (e > 0 ? e : -e) / 32);
 
         this.assert(this.numWords <= 128);
-        this.wordBuffer[1] = Math.floor(mantissa >> 32);
+        this.wordBuffer[1] = Math.floor(mantissa / Math.pow(2, 32));
         this.wordBuffer[0] = mantissa & 0xffffffff;
         this.numWords = this.wordBuffer[1] === 0 ? 1 : 2;
 
@@ -100,7 +100,7 @@ class BigInteger {
         let expBase2 = this.lg2() + 1 - 53;
         if (expBase2 > 0) {
             if (expBase2 < 64) {
-                result *= (1 << expBase2);
+                result *= Math.pow(2, expBase2);
             } else {
                 result *= Math.pow(2, expBase2);
             }
@@ -128,7 +128,7 @@ class BigInteger {
         let carry = addition;
         for (let x = 0; x < this.numWords; x++) {
             let opResult = (this.wordBuffer[x] * factor) + carry;
-            carry = opResult >> 32;
+            carry = Math.floor(opResult / Math.pow(2, 32));
             this.wordBuffer[x] = opResult & 0xffffffff;
         }
 
@@ -162,7 +162,7 @@ class BigInteger {
 
                 for (let y = 0; y < biggerNum.numWords; y++) {
                     product = (biggerNum.wordBuffer[y] * factor) + pResult[y] + carry;
-                    carry = product >> 32;
+                    carry = Math.floor(product / Math.pow(2, 32));
                     pResult[y] = product & 0xffffffff;
                 }
                 pResult[biggerNum.numWords] = carry;
@@ -177,11 +177,11 @@ class BigInteger {
         let compareTo = this.compare(divisor);
         if (compareTo === -1) {
             residual.copyFrom(this);
-            result.setValue(0);
+            result.setFromInteger(0);
             return result;
         } else if (compareTo === 0) {
-            residual.setValue(0);
-            result.setValue(1);
+            residual.setFromInteger(0);
+            result.setFromInteger(1);
             return result;
         }
 
@@ -193,7 +193,7 @@ class BigInteger {
 
         factor = Math.floor(residual.wordBuffer[residual.numWords - 1] / divisor.wordBuffer[divisor.numWords - 1]);
         if ((factor <= 0 || factor > 10) && residual.numWords > 1 && divisor.numWords > 1) {
-            let bigR = (residual.wordBuffer[residual.numWords - 1] << 32) + residual.wordBuffer[residual.numWords - 2];
+            let bigR = (residual.wordBuffer[residual.numWords - 1] * Math.pow(2, 32)) + residual.wordBuffer[residual.numWords - 2];
             factor = Math.floor(bigR / divisor.wordBuffer[divisor.numWords - 1]);
             if (factor > 9) {
                 factor = 9;
@@ -227,11 +227,11 @@ class BigInteger {
         let compareTo = this.compare(divisor);
         if (compareTo === -1) {
             residual.copyFrom(this);
-            result.setValue(0);
+            result.setFromInteger(0);
             return result;
         } else if (compareTo === 0) {
-            residual.setValue(0);
-            result.setValue(1);
+            residual.setFromInteger(0);
+            result.setFromInteger(1);
             return result;
         }
 
@@ -302,7 +302,7 @@ class BigInteger {
         result.setNumWords(totalWords, true);
 
         if (this.numWords === 1 && this.wordBuffer[0] === 0) {
-            result.setValue(0);
+            result.setFromInteger(0);
             return result;
         }
 
@@ -317,8 +317,8 @@ class BigInteger {
             let carry = 0;
             let shiftCarry = 32 - shiftBy;
             for (let x = 0; x < this.numWords; x++) {
-                pResultBuff[x + numNewWords] = pSourceBuff[x] << shiftBy | carry;
-                carry = pSourceBuff[x] >> shiftCarry;
+                pResultBuff[x + numNewWords] = pSourceBuff[x] * Math.pow(2, shiftBy) | carry;
+                carry = pSourceBuff[x] / Math.pow(2, shiftCarry);
             }
             pResultBuff[this.numWords + numNewWords] = carry;
             if (pResultBuff[this.numWords + numNewWords]) {
@@ -340,7 +340,7 @@ class BigInteger {
         result.setNumWords(totalWords, true);
 
         if (numRemovedWords > this.numWords) {
-            result.setValue(0);
+            result.setFromInteger(0);
             return result;
         }
 
@@ -351,8 +351,8 @@ class BigInteger {
             let carry = 0;
             let shiftCarry = 32 - shiftBy;
             for (let x = totalWords - 1; x > -1; x--) {
-                pResultBuff[x] = pSourceBuff[x] >> shiftBy | carry;
-                carry = pSourceBuff[x] << shiftCarry;
+                pResultBuff[x] = pSourceBuff[x] / Math.pow(2, shiftBy) | carry;
+                carry = pSourceBuff[x] * Math.pow(2, shiftCarry);
             }
         } else {
             for (let x = totalWords - 1; x > -1; x--) {
@@ -377,7 +377,7 @@ class BigInteger {
 
         if (this.compare(other) === 0) {
             if (!isAdd || (this.numWords === 1 && this.wordBuffer[0] === 0)) {
-                result.setValue(0);
+                result.setFromInteger(0);
                 return result;
             }
         }
@@ -387,11 +387,11 @@ class BigInteger {
         for (x = 0; x < other.numWords; x++) {
             if (isAdd) {
                 let opResult = (biggerNum.wordBuffer[x] + other.wordBuffer[x] + borrow);
-                borrow = opResult >> 32 & 1;
+                borrow = (opResult >= Math.pow(2, 32)) ? 1 : 0;
                 result.wordBuffer[x] = opResult & 0xffffffff;
             } else {
                 let opResult = (biggerNum.wordBuffer[x] - other.wordBuffer[x] - borrow);
-                borrow = opResult >> 32 & 1;
+                borrow = (opResult < 0) ? 1 : 0;
                 result.wordBuffer[x] = opResult & 0xffffffff;
             }
         }
@@ -399,11 +399,11 @@ class BigInteger {
         for (; x < biggerNum.numWords; x++) {
             if (isAdd) {
                 let opResult = (biggerNum.wordBuffer[x] + borrow);
-                borrow = opResult >> 32 & 1;
+                borrow = (opResult >= Math.pow(2, 32)) ? 1 : 0;
                 result.wordBuffer[x] = opResult & 0xffffffff;
             } else {
- let opResult = (biggerNum.wordBuffer[x] - borrow);
-                borrow = opResult >> 32 & 1;
+                let opResult = (biggerNum.wordBuffer[x] - borrow);
+                borrow = (opResult < 0) ? 1 : 0;
                 result.wordBuffer[x] = opResult & 0xffffffff;
             }
         }
@@ -463,7 +463,7 @@ class BigInteger {
     multByDouble(factor) {
         let bigFactor = new BigInteger();
         bigFactor.setFromDouble(factor);
-        this.multBy(bigFactor);
+        this.mult(bigFactor, this);
     }
 
     copyFrom(other, copyOffsetWords = -1, numCopyWords = -1) {
@@ -492,31 +492,32 @@ class BigInteger {
     }
 
     trimLeadingZeros() {
-        let x;
-        for (x = this.numWords - 1; x >= 0 && this.wordBuffer[x] === 0; x--) {
+        while (this.numWords > 1 && this.wordBuffer[this.numWords - 1] === 0) {
+            this.numWords--;
         }
-        this.numWords = x === -1 ? 1 : x + 1;
     }
 
     assert(condition) {
         if (!condition) {
-            throw new Error("Assertion failed");
+            throw new Error('Assertion failed');
         }
     }
 
     frexp(value, e) {
-        // This is a simplified version of frexp that only works for positive values
-        let mantissa = value;
-        let exponent = 0;
-        while (mantissa >= 2) {
-            mantissa /= 2;
-            exponent++;
+        if (value === 0) {
+            e = 0;
+            return 0;
         }
-        while (mantissa < 1) {
-            mantissa *= 2;
-            exponent--;
+        let data = new DataView(new ArrayBuffer(8));
+        data.setFloat64(0, value);
+        let bits = (data.getUint32(0) >>> 20) & 0x7ff;
+        if (bits === 0) {
+            data.setFloat64(0, value * Math.pow(2, 64));
+            bits = ((data.getUint32(0) >>> 20) & 0x7ff) - 64;
         }
-        e = exponent;
-        return mantissa;
+        e = bits - 1022;
+        let mantissa = (data.getUint32(0) & 0xfffff) * Math.pow(2, 32) + data.getUint32(4);
+        return mantissa * Math.pow(2, -52);
     }
 }
+module.exports = { BigInteger };
