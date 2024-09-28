@@ -520,4 +520,5 @@ class BigInteger {
         return mantissa * Math.pow(2, -52);
     }
 }
+
 module.exports = BigInteger;
