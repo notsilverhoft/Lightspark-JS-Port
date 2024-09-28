@@ -97,14 +97,10 @@ class BigInteger {
             resultMantissa += 1;
         }
 
-        let result = resultMantissa;
+        let result = resultMantissa * Math.pow(2, -52);
         let expBase2 = this.lg2() + 1 - 53;
         if (expBase2 > 0) {
-            if (expBase2 < 64) {
-                result *= Math.pow(2, expBase2);
-            } else {
-                result *= Math.pow(2, expBase2);
-            }
+            result *= Math.pow(2, expBase2);
         }
 
         return result;
@@ -154,7 +150,7 @@ class BigInteger {
             result.wordBuffer[x] = 0;
         }
 
-        for (let x = 0; x < other.numWords; x++) {
+        for (let x = 0; x < other.numWords; {
             let factor = other.wordBuffer[x];
             if (factor) {
                 let pResult = result.wordBuffer.slice(x);
