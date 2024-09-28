@@ -11,13 +11,14 @@ class BigInteger {
 
     setFromDouble(value) {
         let e;
-        let fracMantissa = this.frexp(value, e);
+        let fracMantissa = this.frexp(value, (exp) => e = exp);
         e -= 53; // 52 mantissa bits + the hidden bit
-        let mantissa = Math.floor(fracMantissa * (1 << 53));
+        let mantissa = Math.floor(fracMantissa * Math.pow(2, 53));
 
-        this.numWords = Math.floor(2 + (e > 0 ? e : -e) / 32);
+        this.numWords = Math.ceil((53 + Math.abs(e)) / 32);
 
         this.assert(this.numWords <= 128);
+
         this.wordBuffer[1] = Math.floor(mantissa / Math.pow(2, 32));
         this.wordBuffer[0] = mantissa & 0xffffffff;
         this.numWords = this.wordBuffer[1] === 0 ? 1 : 2;
@@ -503,9 +504,9 @@ class BigInteger {
         }
     }
 
-    frexp(value, e) {
+    frexp(value, eSetter) {
         if (value === 0) {
-            e = 0;
+            eSetter(0);
             return 0;
         }
         let data = new DataView(new ArrayBuffer(8));
@@ -515,7 +516,7 @@ class BigInteger {
             data.setFloat64(0, value * Math.pow(2, 64));
             bits = ((data.getUint32(0) >>> 20) & 0x7ff) - 64;
         }
-        e = bits - 1022;
+        eSetter(bits - 1022);
         let mantissa = (data.getUint32(0) & 0xfffff) * Math.pow(2, 32) + data.getUint32(4);
         return mantissa * Math.pow(2, -52);
     }
